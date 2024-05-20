@@ -1,0 +1,28 @@
+This can just be a file we use for instructions and things we need to remember for this project:
+
+1. When you clone repo, to enter venv run this command in terminal:
+$ source venv/bin/activate
+
+2. To download all dependencies from project run:
+(venv) $ pip install -r requirements.txt
+
+If you have python3 instead of python, use pip3
+
+3. Anytime you install a new dependency or library to the venv, run:
+
+(venv) $ pip freeze > requirements.txt
+
+This will auto overwrite or current requirements.txt file
+
+4. When we want to push some changes we've made but don't want to overwrite origin main:
+
+(venv) $ git stash
+
+To just save you changes locally
+
+or
+
+(venv) $ git checkout -b <new-branch-name-that-doesn't-have-spaces-in-it>
+(venv) $ git push origin <new-branch-name-that-doesn't-have-spaces-in-it>
+
+5. keep adding
