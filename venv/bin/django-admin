@@ -1,6 +1,4 @@
-#!/bin/sh
-'''exec' "/Users/gavinebenezer/Desktop/Quant Project/venv/bin/python3.11" "$0" "$@"
-' '''
+#!/Users/aryansapre/Desktop/quant-project/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
