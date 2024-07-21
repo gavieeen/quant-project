@@ -1,8 +1,13 @@
 from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, login_url, UserMixin, login_user, logout_user
- 
- 
+from distutils.log import debug 
+from fileinput import filename 
+from flask import * 
+import importlib.util
+import sys
+import backtrader as bt
+import yfinance as yf
 # Create a flask application
 app = Flask(__name__)
  
@@ -36,6 +41,7 @@ with app.app_context():
 @login_manager.user_loader
 def loader_user(user_id):
     return Users.query.get(user_id)
+
 @app.route('/register', methods=["GET", "POST"])
 def register():
   # If the user made a POST request, create a new user
@@ -75,5 +81,43 @@ def home():
 def logout():
     logout_user()
     return redirect(url_for("home"))
+@app.route('/success', methods = ['POST'])   
+def success():   
+    if request.method == 'POST':   
+        f = request.files['file'] 
+        f.save(f.filename)
+        finalMoneyMade = runstrat(f.filename)
+        return render_template("Acknowledge.html",name = f.filename)   
+def load_strategy(file_path):
+    spec = importlib.util.spec_from_file_location("user_strategy", file_path)
+    strategy_module = importlib.util.module_from_spec(spec)
+    sys.modules["user_strategy"] = strategy_module
+    spec.loader.exec_module(strategy_module)
+    return strategy_module.LinearRegressionStrategy
+
+def runstrat(filename):
+    strategy_file = filename
+    strategy_class = load_strategy(strategy_file)
+
+    cerebro = bt.Cerebro()
+
+    # Add the custom strategy
+    cerebro.addstrategy(strategy_class)
+    
+    # Download data from Yahoo Finance
+    nvda_data = yf.download("NVDA", start="2018-01-01", end="2018-12-31")
+
+    # Convert data to PandasData for backtrader
+    data = bt.feeds.PandasData(dataname=nvda_data)
+    cerebro.adddata(data)
+    cerebro.broker.setcash(1000.0)
+    cerebro.addobserver(bt.observers.Value)
+    prev = cerebro.broker.getvalue()
+    print(f'Starting Portfolio Value: {cerebro.broker.getvalue():.2f}')
+    cerebro.run()
+    cerebro.plot(iplot=True, volume=False)
+    print(f'Final Portfolio Value: {cerebro.broker.getvalue():.2f}')
+    return cerebro.broker.getvalue()
+    
 if __name__ == "__main__":
     app.run()

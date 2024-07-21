@@ -24,5 +24,11 @@
 	{% else %}
 	<h1>You are not logged in</h1>
 	{% endif %}
+    <body>   
+        <form action = "/success" method = "post" enctype="multipart/form-data">   
+            <input type="file" name="file" />   
+            <input type = "submit" value="Upload">   
+        </form>   
+    </body>   
 </body>
 </html>
