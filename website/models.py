@@ -5,7 +5,7 @@ from sqlalchemy import func
 
 class Note(db.Model):
     id = db.Column(db.Integer, primary_key = True)
-    data = db.Column(db.String(10000))
+    data = db.Column(db.String(100000))
     date = db.Column(db.DateTime(timezone = True), default = func.now())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 
@@ -15,3 +15,11 @@ class User(db.Model,UserMixin):
     password = db.Column(db.String(150))
     first_name = db.Column(db.String(150))
     notes = db.relationship('Note')
+    
+class Algorithm(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(256), nullable=False)  # Store the filename
+    data = db.Column(db.Text, nullable=False)             # Store the file content as text
+    date = db.Column(db.DateTime(timezone=True), default=func.now())
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+
