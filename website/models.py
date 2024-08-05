@@ -19,7 +19,7 @@ class User(db.Model,UserMixin):
 class Algorithm(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(256), nullable=False)  # Store the filename
-    data = db.Column(db.Text, nullable=False)             # Store the file content as text
+    data = db.Column(db.LargeBinary, nullable=False)             # Store the file content as text
     date = db.Column(db.DateTime(timezone=True), default=func.now())
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
 

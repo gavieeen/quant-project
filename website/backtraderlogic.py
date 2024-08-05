@@ -2,21 +2,46 @@ import importlib.util
 import sys
 import backtrader as bt
 import yfinance as yf
+import os
+import tempfile
+import ast
 
-def load_strategy(file_path):
-    spec = importlib.util.spec_from_file_location("user_strategy", file_path)
+def load_strategy(file_content):
+    file_path = '/tmp/temp_algorithm.py'
+    with open(file_path, 'wb') as f:
+        f.write(file_content)
+    
+    spec = importlib.util.spec_from_file_location("strategy_module", file_path)
     strategy_module = importlib.util.module_from_spec(spec)
-    sys.modules["user_strategy"] = strategy_module
     spec.loader.exec_module(strategy_module)
-    return strategy_module.LinearRegressionStrategy
+    os.remove(file_path)  # Clean up the temporary file
+    return strategy_module.MyStrategy 
 
-if __name__ == '__main__':
-    strategy_file = "testuserstrategy.py"
-    strategy_class = load_strategy(strategy_file)
+def run_algorithm(file_content):
+    
+   # Execute the uploaded code
+    exec(file_content, globals())
+    
+    # Parse the file content to find the strategy class
+    strategy_class_name = None
+    parsed_code = ast.parse(file_content)
+    for node in ast.walk(parsed_code):
+        if isinstance(node, ast.ClassDef):
+            for base in node.bases:
+                if isinstance(base, ast.Attribute) and base.attr == 'Strategy':
+                    strategy_class_name = node.name
+                    break
+            if strategy_class_name:
+                break
+
+    if strategy_class_name is None:
+        raise ValueError("No valid strategy class found in the uploaded file.")
+
+    strategy_class = globals().get(strategy_class_name)
+    if not strategy_class:
+        raise ValueError(f"Strategy class {strategy_class_name} not found in global scope.")
 
     cerebro = bt.Cerebro()
-
-    # Add the custom strategy
     cerebro.addstrategy(strategy_class)
     
     # Download data from Yahoo Finance
@@ -27,8 +52,10 @@ if __name__ == '__main__':
     cerebro.adddata(data)
     cerebro.broker.setcash(1000.0)
     cerebro.addobserver(bt.observers.Value)
-
-    print(f'Starting Portfolio Value: {cerebro.broker.getvalue():.2f}')
+    start = cerebro.broker.getvalue()
+    #print(f'Starting Portfolio Value: {cerebro.broker.getvalue():.2f}')
     cerebro.run()
-    print(f'Final Portfolio Value: {cerebro.broker.getvalue():.2f}')
-    cerebro.plot(iplot=True, volume=False)
+    ending = cerebro.broker.getvalue()
+    #print(f'Final Portfolio Value: {cerebro.broker.getvalue():.2f}')
+    plot = cerebro.plot(iplot=True, volume=False)
+    return start, ending, plot

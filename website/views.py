@@ -1,35 +1,54 @@
-from flask import Blueprint, render_template, request, flash, jsonify
+from flask import Blueprint, render_template, request, flash, jsonify, redirect
 from flask_login import login_user, login_required, logout_user,current_user
 from .models import *
 from . import db
 import json
+from . import backtraderlogic
+import os 
 
 views = Blueprint('views',__name__)
+ALLOWED_EXTENSIONS = {'py'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @views.route('/', methods = ["GET","POST"])
 @login_required
 def home():
     if request.method == "POST":
-        filename = request.form.get("filename")
-        algorithm = request.form.get("algorithm")
+        filename = request.form.get('filename')
 
-        if len(algorithm) < 1:
-            flash("Algorithm is too short", category = "error")
-        else:
-            newAlgo = Algorithm(data = algorithm, filename = filename, user_id = current_user.id)
-            db.session.add(newAlgo)
+        if 'file' not in request.files:
+            flash('No file part', 'error')
+            return redirect(request.url)
+        
+        file = request.files['file']
+
+        if file.filename == '':
+            flash('No selected file', 'error')
+            return redirect(request.url)
+
+        if file and allowed_file(file.filename):
+            file_content = file.read()  # Read and decode the file content as a string
+
+            # Save the algorithm to the database
+            new_algorithm = Algorithm(filename=filename, data=file_content, user_id=current_user.id)
+            db.session.add(new_algorithm)
             db.session.commit()
-            flash("Algorithm added!", category = "success")     
-           
-    return render_template("home.html", user = current_user)
-@views.route("/delete-note", methods = ["POST"])
-def delete_note():
-    note = json.loads(request.data)
-    #print(note)
-    noteID = note["noteID"]
-    algorithm = Algorithm.query.get(noteID)
+            
+            start, end, plot = backtraderlogic.run_algorithm(file_content) 
+            print(start, " ", end)  
+
+    algorithms = Algorithm.query.filter_by(user_id=current_user.id).all()
+    return render_template("home.html", user=current_user, algorithms=algorithms)
+    
+@views.route("/delete-algorithm", methods = ["POST"])
+def delete_algorithm():
+    algorithm_data = json.loads(request.data)
+    algo_id = algorithm_data["algoID"]
+    algorithm = Algorithm.query.get(algo_id)
     if algorithm:
-        if note.user_id == current_user.id:
+        if algorithm.user_id == current_user.id:
             db.session.delete(algorithm)
             db.session.commit()
     return jsonify({})
