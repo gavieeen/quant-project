@@ -36,11 +36,15 @@ def home():
             db.session.add(new_algorithm)
             db.session.commit()
             
-            start, end, plot = backtraderlogic.run_algorithm(file_content) 
+            start, end, plot_file = backtraderlogic.run_algorithm(file_content) 
             print(start, " ", end)  
 
+            # Store the plot file path in the database or session
+            new_algorithm.plot_file = plot_file
+            db.session.commit()
+
     algorithms = Algorithm.query.filter_by(user_id=current_user.id).all()
-    return render_template("home.html", user=current_user, algorithms=algorithms)
+    return render_template("home.html", user=current_user, algorithms=algorithms, plot_file='static/plot.png')
     
 @views.route("/delete-algorithm", methods = ["POST"])
 def delete_algorithm():

@@ -5,10 +5,17 @@
 <h1 align="center">Your Playground</h1>
 <ul class="list-group list-group-flush" id="algorithms">
     {% for algorithm in algorithms %}
-    <li class="list-group-item">{{ algorithm.filename }}
+    <li class="list-group-item">
+        {{ algorithm.filename }}
         <button type="button" class="close" onclick="deleteAlgorithm({{ algorithm.id }})">
             <span aria-hidden="true">&times;</span>
         </button>
+        {% if algorithm.plot_file %}
+        <div>
+            <h5>Plot:</h5>
+            <img src="{{ url_for('static', filename='plot.png') }}" alt="Algorithm Plot">
+        </div>
+        {% endif %}
     </li>
     {% endfor %}
 </ul>
